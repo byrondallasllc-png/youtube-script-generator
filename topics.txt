@@ -1,0 +1,15 @@
+# YouTube Script Topics
+# Format: channel|topic
+# Channels: finance, motivation, horror
+
+finance|7 Assets That Pay You While You Sleep
+finance|How I Made My First $1000 Online Doing Nothing
+finance|Why 99% of People Will Never Be Wealthy
+
+motivation|The Man Who Lost Everything and Started Over at 40
+motivation|Why Most People Quit One Week Before Success
+motivation|Stop Waiting for the Right Moment
+
+horror|The Night Shift at the Hotel on Route 9
+horror|I Found My Missing Sister's Diary — I Wish I Hadn't
+horror|The House on Grover Lane Has Been Vacant for 30 Years
