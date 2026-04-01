@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Bankruptcy Preparation Planner — Ch.7 & Ch.13</title>
+<style>
+  :root {
+    --bg:       #0d1117;
+    --surface:  #161b22;
+    --surface2: #21262d;
+    --border:   #30363d;
+    --text:     #e6edf3;
+    --muted:    #8b949e;
+    --cyan:     #58a6ff;
+    --green:    #3fb950;
+    --yellow:   #d29922;
+    --red:      #f85149;
+    --purple:   #bc8cff;
+    --orange:   #ffa657;
+    --ch7:      #58a6ff;
+    --ch13:     #bc8cff;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.6; }
+
+  /* ── Layout ── */
+  .app { display: flex; min-height: 100vh; }
+  .sidebar { width: 240px; background: var(--surface); border-right: 1px solid var(--border); padding: 0; position: fixed; top: 0; left: 0; height: 100vh; overflow-y: auto; flex-shrink: 0; }
+  .main { margin-left: 240px; padding: 32px 40px; max-width: 960px; width: 100%; }
+
+  /* ── Sidebar ── */
+  .sidebar-header { padding: 20px 16px 14px; border-bottom: 1px solid var(--border); }
+  .sidebar-header h2 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+  .sidebar-header p { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .nav-section { padding: 8px 0; border-bottom: 1px solid var(--border); }
+  .nav-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding: 6px 16px 4px; }
+  .nav-item { display: flex; align-items: center; gap: 8px; padding: 7px 16px; cursor: pointer; font-size: 13px; color: var(--text); border-left: 3px solid transparent; transition: all .15s; }
+  .nav-item:hover { background: var(--surface2); color: var(--cyan); }
+  .nav-item.active { background: var(--surface2); border-left-color: var(--cyan); color: var(--cyan); font-weight: 600; }
+  .nav-item.ch7-item.active { border-left-color: var(--ch7); color: var(--ch7); }
+  .nav-item.ch13-item.active { border-left-color: var(--ch13); color: var(--ch13); }
+  .nav-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+  .nav-dot.ch7  { background: var(--ch7); }
+  .nav-dot.ch13 { background: var(--ch13); }
+  .progress-mini { font-size: 11px; color: var(--muted); margin-left: auto; }
+
+  /* ── Top bar ── */
+  .topbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+  .topbar h1 { font-size: 22px; font-weight: 700; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+  .badge-ch7  { background: rgba(88,166,255,.15); color: var(--ch7); border: 1px solid rgba(88,166,255,.3); }
+  .badge-ch13 { background: rgba(188,140,255,.15); color: var(--ch13); border: 1px solid rgba(188,140,255,.3); }
+  .badge-warn { background: rgba(242,147,34,.15); color: var(--orange); border: 1px solid rgba(242,147,34,.3); }
+  .badge-ok   { background: rgba(63,185,80,.15);  color: var(--green); border: 1px solid rgba(63,185,80,.3); }
+
+  /* ── Cards ── */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 24px; margin-bottom: 20px; }
+  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 700px) { .card-grid { grid-template-columns: 1fr; } .main { padding: 20px; } .sidebar { display: none; } }
+
+  /* ── Buttons ── */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; border: none; transition: all .15s; }
+  .btn-primary { background: var(--cyan); color: #000; }
+  .btn-primary:hover { opacity: .85; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { background: var(--border); }
+  .btn-ch7  { background: var(--ch7); color: #000; }
+  .btn-ch13 { background: var(--ch13); color: #000; }
+  .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+  /* ── Progress bar ── */
+  .progress-bar { background: var(--surface2); border-radius: 4px; height: 6px; overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; border-radius: 4px; transition: width .4s ease; }
+  .fill-ch7  { background: var(--ch7); }
+  .fill-ch13 { background: var(--ch13); }
+  .fill-green { background: var(--green); }
+
+  /* ── Checklist ── */
+  .phase-header { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 16px 0 8px; border-bottom: 1px solid var(--border); margin-bottom: 4px; display: flex; align-items: center; justify-content: space-between; }
+  .check-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 4px; border-bottom: 1px solid rgba(48,54,61,.5); cursor: pointer; transition: background .1s; border-radius: 4px; }
+  .check-item:hover { background: var(--surface2); }
+  .check-item input[type=checkbox] { width: 17px; height: 17px; margin-top: 2px; accent-color: var(--green); cursor: pointer; flex-shrink: 0; }
+  .check-label { font-size: 14px; flex: 1; }
+  .check-item.done .check-label { text-decoration: line-through; color: var(--muted); }
+
+  /* ── Explainer ── */
+  .explainer-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+  .explainer-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px; cursor: pointer; transition: all .15s; }
+  .explainer-card:hover { border-color: var(--cyan); background: var(--surface2); }
+  .explainer-card h4 { font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .explainer-card p { font-size: 12px; color: var(--muted); }
+  .explainer-icon { font-size: 20px; margin-bottom: 8px; }
+
+  /* ── Modal ── */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.7); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; max-width: 640px; width: 100%; max-height: 85vh; overflow-y: auto; padding: 28px; position: relative; }
+  .modal h3 { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+  .modal pre { font-family: inherit; font-size: 13.5px; line-height: 1.75; white-space: pre-wrap; color: var(--text); }
+  .modal .close-btn { position: absolute; top: 16px; right: 16px; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); width: 28px; height: 28px; border-radius: 6px; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; }
+  .modal .close-btn:hover { color: var(--text); }
+
+  /* ── Tables ── */
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; padding: 10px 12px; background: var(--surface2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid var(--border); }
+  td { padding: 10px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2); }
+  .td-feat { font-weight: 600; color: var(--text); }
+  .td-ch7  { color: var(--ch7); }
+  .td-ch13 { color: var(--ch13); }
+
+  /* ── Alerts ── */
+  .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 16px; font-size: 13.5px; border-left: 3px solid; }
+  .alert-red    { background: rgba(248,81,73,.1);  border-color: var(--red);    color: #ffa8a8; }
+  .alert-yellow { background: rgba(210,153,34,.1); border-color: var(--yellow); color: #f0c070; }
+  .alert-green  { background: rgba(63,185,80,.1);  border-color: var(--green);  color: #a0e8a0; }
+  .alert-blue   { background: rgba(88,166,255,.1); border-color: var(--cyan);   color: #a8d4ff; }
+  .alert-purple { background: rgba(188,140,255,.1);border-color: var(--purple); color: #d8c0ff; }
+  .alert strong { display: block; font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+
+  /* ── Intake form ── */
+  .intake-step { display: none; }
+  .intake-step.active { display: block; }
+  .q-label { font-size: 16px; font-weight: 600; margin-bottom: 16px; line-height: 1.5; }
+  .q-sub   { font-size: 13px; color: var(--muted); margin-bottom: 16px; }
+  .option-list { display: flex; flex-direction: column; gap: 8px; }
+  .opt-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 16px; text-align: left; font-size: 14px; color: var(--text); cursor: pointer; transition: all .15s; display: flex; align-items: center; gap: 10px; }
+  .opt-btn:hover  { border-color: var(--cyan); background: rgba(88,166,255,.08); }
+  .opt-btn.selected { border-color: var(--cyan); background: rgba(88,166,255,.15); color: var(--cyan); font-weight: 600; }
+  .yn-row { display: flex; gap: 12px; }
+  .yn-btn { flex: 1; padding: 14px; border-radius: 8px; border: 1px solid var(--border); font-size: 15px; font-weight: 700; cursor: pointer; transition: all .15s; background: var(--surface2); color: var(--text); }
+  .yn-btn:hover   { border-color: var(--cyan); }
+  .yn-btn.yes.sel { background: rgba(63,185,80,.2); border-color: var(--green); color: var(--green); }
+  .yn-btn.no.sel  { background: rgba(248,81,73,.15); border-color: var(--red); color: var(--red); }
+  .intake-nav { display: flex; align-items: center; justify-content: space-between; margin-top: 24px; }
+  .step-dots { display: flex; gap: 6px; }
+  .step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); }
+  .step-dot.done { background: var(--green); }
+  .step-dot.current { background: var(--cyan); }
+
+  /* ── Result / Rec ── */
+  .rec-box { border: 2px solid; border-radius: 12px; padding: 24px; margin-bottom: 20px; }
+  .rec-box.ch7  { border-color: var(--ch7);  background: rgba(88,166,255,.07);  }
+  .rec-box.ch13 { border-color: var(--ch13); background: rgba(188,140,255,.07); }
+  .rec-box.both { border-color: var(--yellow);background: rgba(210,153,34,.07); }
+  .rec-title { font-size: 22px; font-weight: 800; margin-bottom: 6px; }
+  .rec-sub   { color: var(--muted); font-size: 14px; }
+
+  /* ── Resource links ── */
+  .resource-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .resource-item:last-child { border-bottom: none; }
+  .resource-name { font-weight: 700; margin-bottom: 2px; }
+  .resource-url  { color: var(--cyan); font-size: 13px; font-family: monospace; }
+  .resource-desc { color: var(--muted); font-size: 13px; margin-top: 2px; }
+
+  /* ── Timeline ── */
+  .timeline { position: relative; padding-left: 24px; }
+  .timeline::before { content: ''; position: absolute; left: 7px; top: 0; bottom: 0; width: 2px; background: var(--border); }
+  .tl-item { position: relative; padding: 0 0 20px 20px; }
+  .tl-dot  { position: absolute; left: -24px; top: 4px; width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--surface); }
+  .tl-time { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 2px; }
+  .tl-event { font-size: 14px; }
+
+  /* ── Insight ── */
+  .insight-item { padding: 16px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; margin-bottom: 12px; }
+  .insight-title { font-weight: 700; margin-bottom: 6px; font-size: 14px; }
+  .insight-body  { font-size: 13.5px; color: var(--muted); line-height: 1.6; }
+
+  /* ── Disclaimer ── */
+  .disclaimer { background: rgba(248,81,73,.07); border: 1px solid rgba(248,81,73,.25); border-radius: 8px; padding: 14px 18px; font-size: 12.5px; color: var(--muted); }
+  .disclaimer strong { color: var(--red); }
+
+  /* ── Misc ── */
+  .chip { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
+  .chip-green  { background: rgba(63,185,80,.2);  color: var(--green); }
+  .chip-yellow { background: rgba(210,153,34,.2); color: var(--yellow); }
+  .chip-red    { background: rgba(248,81,73,.2);  color: var(--red); }
+  .tag-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .section-title { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
+  .section-sub   { color: var(--muted); font-size: 14px; margin-bottom: 24px; }
+  hr.divider { border: none; border-top: 1px solid var(--border); margin: 24px 0; }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<nav class="sidebar">
+  <div class="sidebar-header">
+    <h2>Bankruptcy Planner</h2>
+    <p>Federal Guidelines · Ch.7 & Ch.13</p>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-item active" onclick="showPage('intake')" id="nav-intake">
+      <span>🏁</span> Start Here — Intake
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Chapter 7</div>
+    <div class="nav-item ch7-item" onclick="showPage('ch7-overview')" id="nav-ch7-overview">
+      <span class="nav-dot ch7"></span> Overview
+    </div>
+    <div class="nav-item ch7-item" onclick="showPage('ch7-eligibility')" id="nav-ch7-eligibility">
+      <span class="nav-dot ch7"></span> Eligibility
+    </div>
+    <div class="nav-item ch7-item" onclick="showPage('ch7-checklist')" id="nav-ch7-checklist">
+      <span class="nav-dot ch7"></span> Checklist
+      <span class="progress-mini" id="mini-ch7"></span>
+    </div>
+    <div class="nav-item ch7-item" onclick="showPage('ch7-timeline')" id="nav-ch7-timeline">
+      <span class="nav-dot ch7"></span> Timeline
+    </div>
+    <div class="nav-item ch7-item" onclick="showPage('ch7-insights')" id="nav-ch7-insights">
+      <span class="nav-dot ch7"></span> Insights & Tips
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Chapter 13</div>
+    <div class="nav-item ch13-item" onclick="showPage('ch13-overview')" id="nav-ch13-overview">
+      <span class="nav-dot ch13"></span> Overview
+    </div>
+    <div class="nav-item ch13-item" onclick="showPage('ch13-eligibility')" id="nav-ch13-eligibility">
+      <span class="nav-dot ch13"></span> Eligibility
+    </div>
+    <div class="nav-item ch13-item" onclick="showPage('ch13-checklist')" id="nav-ch13-checklist">
+      <span class="nav-dot ch13"></span> Checklist
+      <span class="progress-mini" id="mini-ch13"></span>
+    </div>
+    <div class="nav-item ch13-item" onclick="showPage('ch13-timeline')" id="nav-ch13-timeline">
+      <span class="nav-dot ch13"></span> Timeline
+    </div>
+    <div class="nav-item ch13-item" onclick="showPage('ch13-insights')" id="nav-ch13-insights">
+      <span class="nav-dot ch13"></span> Insights & Tips
+    </div>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Reference</div>
+    <div class="nav-item" onclick="showPage('compare')" id="nav-compare">
+      <span>⚖️</span> Ch.7 vs Ch.13
+    </div>
+    <div class="nav-item" onclick="showPage('explainers')" id="nav-explainers">
+      <span>📖</span> Key Concepts
+    </div>
+    <div class="nav-item" onclick="showPage('resources')" id="nav-resources">
+      <span>🔗</span> Federal Resources
+    </div>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+<!-- ══════════════════════════════════════════
+     INTAKE
+══════════════════════════════════════════ -->
+<section id="page-intake">
+  <div class="topbar">
+    <h1>🏁 Personal Intake Assessment</h1>
+  </div>
+  <div class="disclaimer" style="margin-bottom:20px;">
+    <strong>Not Legal Advice.</strong> This planner is for educational purposes only, based on federal bankruptcy law (11 U.S.C.). Dollar amounts adjust periodically — verify at <strong>uscourts.gov</strong> and <strong>justice.gov/ust</strong>. Consult a licensed bankruptcy attorney before filing.
+  </div>
+
+  <div class="card">
+    <div id="intake-q1" class="intake-step active">
+      <div class="q-label">What should we call you?</div>
+      <input id="intake-name" type="text" placeholder="First name or nickname" style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:15px;color:var(--text);width:100%;max-width:320px;"/>
+      <div class="intake-nav">
+        <div class="step-dots" id="dots-1"></div>
+        <button class="btn btn-primary" onclick="intakeNext(1)">Next →</button>
+      </div>
+    </div>
+
+    <div id="intake-q2" class="intake-step">
+      <div class="q-label">Do you have regular income?</div>
+      <div class="q-sub">This includes wages, self-employment, Social Security, pension, rental income — any consistent source.</div>
+      <div class="yn-row">
+        <button class="yn-btn yes" onclick="intakeYN('income',true,2)">✓ Yes</button>
+        <button class="yn-btn no"  onclick="intakeYN('income',false,2)">✗ No</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-2"></div><div style="display:flex;gap:8px;"><button class="btn btn-secondary" onclick="intakeBack(1)">← Back</button></div></div>
+    </div>
+
+    <div id="intake-q3" class="intake-step">
+      <div class="q-label">What is your approximate gross monthly income?</div>
+      <div class="q-sub">Include all sources. This helps determine which chapter may fit you best.</div>
+      <div class="option-list">
+        <button class="opt-btn" onclick="intakeOpt('income_level',1,3)">💰 Under $2,000 / month</button>
+        <button class="opt-btn" onclick="intakeOpt('income_level',2,3)">💰 $2,000 – $4,000 / month</button>
+        <button class="opt-btn" onclick="intakeOpt('income_level',3,3)">💰 $4,000 – $7,000 / month</button>
+        <button class="opt-btn" onclick="intakeOpt('income_level',4,3)">💰 Over $7,000 / month</button>
+        <button class="opt-btn" onclick="intakeOpt('income_level',5,3)">📊 It varies significantly month to month</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-3"></div><button class="btn btn-secondary" onclick="intakeBack(2)">← Back</button></div>
+    </div>
+
+    <div id="intake-q4" class="intake-step">
+      <div class="q-label">What is your primary type of debt?</div>
+      <div class="q-sub">Pick the category that makes up most of what you owe.</div>
+      <div class="option-list">
+        <button class="opt-btn" onclick="intakeOpt('debt_type',1,4)">💳 Credit cards / personal loans / medical bills</button>
+        <button class="opt-btn" onclick="intakeOpt('debt_type',2,4)">🏠 Mortgage arrears (behind on home payments)</button>
+        <button class="opt-btn" onclick="intakeOpt('debt_type',3,4)">🚗 Car loan trouble (behind or owe more than it's worth)</button>
+        <button class="opt-btn" onclick="intakeOpt('debt_type',4,4)">📋 Back taxes (federal or state income taxes)</button>
+        <button class="opt-btn" onclick="intakeOpt('debt_type',5,4)">🎓 Student loans</button>
+        <button class="opt-btn" onclick="intakeOpt('debt_type',6,4)">🔀 A mix of several types</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-4"></div><button class="btn btn-secondary" onclick="intakeBack(3)">← Back</button></div>
+    </div>
+
+    <div id="intake-q5" class="intake-step">
+      <div class="q-label">Do you own a home or real estate?</div>
+      <div class="yn-row">
+        <button class="yn-btn yes" onclick="intakeYN('owns_home',true,5)">✓ Yes</button>
+        <button class="yn-btn no"  onclick="intakeYN('owns_home',false,5)">✗ No</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-5"></div><button class="btn btn-secondary" onclick="intakeBack(4)">← Back</button></div>
+    </div>
+
+    <div id="intake-q6" class="intake-step">
+      <div class="q-label">Are you behind on your mortgage payments?</div>
+      <div class="q-sub">Even 1-2 months behind counts. This is critical for choosing the right chapter.</div>
+      <div class="yn-row">
+        <button class="yn-btn yes" onclick="intakeYN('home_behind',true,6)">✓ Yes — behind on mortgage</button>
+        <button class="yn-btn no"  onclick="intakeYN('home_behind',false,6)">✗ No — current on mortgage</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-6"></div><button class="btn btn-secondary" onclick="intakeBack(5)">← Back</button></div>
+    </div>
+
+    <div id="intake-q7" class="intake-step">
+      <div class="q-label">Does your home have equity?</div>
+      <div class="q-sub">Equity means your home is worth <em>more</em> than you owe on the mortgage. Example: home worth $200K, you owe $150K → $50K equity.</div>
+      <div class="yn-row">
+        <button class="yn-btn yes" onclick="intakeYN('home_equity',true,7)">✓ Yes — I have equity</button>
+        <button class="yn-btn no"  onclick="intakeYN('home_equity',false,7)">✗ No equity / not sure</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-7"></div><button class="btn btn-secondary" onclick="intakeBack(6)">← Back</button></div>
+    </div>
+
+    <div id="intake-q8" class="intake-step">
+      <div class="q-label">Have you ever filed for bankruptcy before?</div>
+      <div class="yn-row">
+        <button class="yn-btn yes" onclick="intakeYN('prior_bk',true,8)">✓ Yes</button>
+        <button class="yn-btn no"  onclick="intakeYN('prior_bk',false,8)">✗ No — first time</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-8"></div><button class="btn btn-secondary" onclick="intakeBack(7)">← Back</button></div>
+    </div>
+
+    <div id="intake-q9" class="intake-step">
+      <div class="q-label">When was your last bankruptcy discharge?</div>
+      <div class="q-sub">A "discharge" means the court erased your debts. If your case was dismissed (not completed), answer accordingly.</div>
+      <div class="option-list">
+        <button class="opt-btn" onclick="intakeOpt('prior_when',1,9)">⏱️ Less than 4 years ago</button>
+        <button class="opt-btn" onclick="intakeOpt('prior_when',2,9)">⏱️ 4 – 6 years ago</button>
+        <button class="opt-btn" onclick="intakeOpt('prior_when',3,9)">⏱️ 6 – 8 years ago</button>
+        <button class="opt-btn" onclick="intakeOpt('prior_when',4,9)">✅ More than 8 years ago</button>
+        <button class="opt-btn" onclick="intakeOpt('prior_when',5,9)">❌ It was dismissed, not discharged</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-9"></div><button class="btn btn-secondary" onclick="intakeBack(8)">← Back</button></div>
+    </div>
+
+    <div id="intake-q10" class="intake-step">
+      <div class="q-label">Is there an urgent situation driving your interest in bankruptcy?</div>
+      <div class="option-list">
+        <button class="opt-btn" onclick="intakeOpt('urgency',1,10)">🏠 Foreclosure is pending or a sale date has been scheduled</button>
+        <button class="opt-btn" onclick="intakeOpt('urgency',2,10)">💸 Wage garnishment is currently happening</button>
+        <button class="opt-btn" onclick="intakeOpt('urgency',3,10)">🏦 Bank account has been levied or frozen</button>
+        <button class="opt-btn" onclick="intakeOpt('urgency',4,10)">⚖️ A lawsuit has been filed against me</button>
+        <button class="opt-btn" onclick="intakeOpt('urgency',5,10)">🚗 Repossession has been threatened or attempted</button>
+        <button class="opt-btn" onclick="intakeOpt('urgency',0,10)">🗓️ No emergency — I'm planning ahead</button>
+      </div>
+      <div class="intake-nav"><div class="step-dots" id="dots-10"></div><button class="btn btn-secondary" onclick="intakeBack(9)">← Back</button></div>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div id="intake-results" style="display:none;">
+    <div id="result-urgency-alert"></div>
+    <div id="result-rec-box" class="rec-box"></div>
+    <div id="result-flags"></div>
+    <div class="card">
+      <h3>📋 Your Personalized Next Steps</h3>
+      <div id="result-nextsteps"></div>
+    </div>
+    <div id="result-retire-note"></div>
+    <div style="display:flex;gap:12px;margin-top:8px;" id="result-cta-buttons"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH7 OVERVIEW
+══════════════════════════════════════════ -->
+<section id="page-ch7-overview" style="display:none;">
+  <div class="topbar"><h1><span style="color:var(--ch7)">Chapter 7</span> — Liquidation Bankruptcy</h1><span class="badge badge-ch7">3–6 Months</span></div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>📌 What Is Chapter 7?</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:12px;">Chapter 7 is called <strong style="color:var(--text)">"liquidation bankruptcy."</strong> A court-appointed trustee can sell your non-exempt property to repay creditors — but in most cases there's nothing to sell, and your eligible debts get completely erased.</p>
+      <div class="alert alert-blue"><strong>Key benefit</strong> Most unsecured debt (credit cards, medical bills, personal loans) is wiped out entirely — typically in just 3–6 months.</div>
+    </div>
+    <div class="card">
+      <h3>✅ Best For People Who...</h3>
+      <ul style="padding-left:18px;font-size:14px;line-height:2;">
+        <li>Have mostly unsecured debt (credit cards, medical bills)</li>
+        <li>Have little to no non-exempt property</li>
+        <li>Pass the Means Test (lower income)</li>
+        <li>Want the fastest path to a fresh start</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>⛔ Not Ideal If You...</h3>
+      <ul style="padding-left:18px;font-size:14px;line-height:2;">
+        <li>Are behind on mortgage & want to save your home</li>
+        <li>Have significant non-exempt assets to protect</li>
+        <li>Fail the Means Test (income too high)</li>
+        <li>Filed Chapter 7 in the last 8 years</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>📊 Key Facts</h3>
+      <table>
+        <tr><td class="td-feat">Filing Fee</td><td class="td-ch7">$338</td></tr>
+        <tr><td class="td-feat">Duration</td><td class="td-ch7">3–6 months</td></tr>
+        <tr><td class="td-feat">Income Required</td><td class="td-ch7">Low/none preferred</td></tr>
+        <tr><td class="td-feat">Credit Report</td><td class="td-ch7">10 years from filing</td></tr>
+        <tr><td class="td-feat">Refile Wait</td><td class="td-ch7">8 yrs after prior Ch.7</td></tr>
+        <tr><td class="td-feat">Legal Ref.</td><td class="td-ch7">11 U.S.C. §§ 701–784</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="card">
+    <h3>🚫 What Debts Survive Chapter 7?</h3>
+    <p style="color:var(--muted);font-size:13.5px;margin-bottom:14px;">These debts are <strong style="color:var(--red)">NOT</strong> erased by bankruptcy (per 11 U.S.C. § 523):</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13.5px;">
+      <div>🎓 Student loans (rare exceptions)</div>
+      <div>👶 Child support &amp; alimony</div>
+      <div>🏛️ Recent income taxes (&lt;3 yrs)</div>
+      <div>⚖️ Debts from fraud or wrongdoing</div>
+      <div>🚨 Criminal fines &amp; restitution</div>
+      <div>🚗 DUI injury/death judgments</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH7 ELIGIBILITY
+══════════════════════════════════════════ -->
+<section id="page-ch7-eligibility" style="display:none;">
+  <div class="topbar"><h1><span style="color:var(--ch7)">Chapter 7</span> — Eligibility</h1></div>
+  <div class="alert alert-yellow"><strong>Important</strong> This is a self-assessment tool, not a legal determination. An attorney can confirm your eligibility with certainty.</div>
+  <div id="ch7-elig-list"></div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH7 CHECKLIST
+══════════════════════════════════════════ -->
+<section id="page-ch7-checklist" style="display:none;">
+  <div class="topbar">
+    <div>
+      <h1><span style="color:var(--ch7)">Chapter 7</span> — Step-by-Step Checklist</h1>
+      <p style="color:var(--muted);font-size:13px;margin-top:4px;">Track every task from day one to discharge. Progress saves automatically.</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="resetChecklist('ch7')">Reset</button>
+  </div>
+  <div class="card" style="padding:16px 24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-weight:700;">Overall Progress</span>
+      <span id="ch7-overall-pct" style="color:var(--ch7);font-weight:700;"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill fill-ch7" id="ch7-overall-bar" style="width:0%"></div></div>
+  </div>
+  <div id="ch7-checklist-body"></div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH7 TIMELINE
+══════════════════════════════════════════ -->
+<section id="page-ch7-timeline" style="display:none;">
+  <div class="topbar"><h1><span style="color:var(--ch7)">Chapter 7</span> — Timeline</h1></div>
+  <div class="card">
+    <div class="timeline" id="ch7-timeline-body"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH7 INSIGHTS
+══════════════════════════════════════════ -->
+<section id="page-ch7-insights" style="display:none;">
+  <div class="topbar"><h1><span style="color:var(--ch7)">Chapter 7</span> — Insights &amp; Tips</h1></div>
+  <div id="ch7-insights-body"></div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH13 OVERVIEW
+══════════════════════════════════════════ -->
+<section id="page-ch13-overview" style="display:none;">
+  <div class="topbar"><h1><span style="color:var(--ch13)">Chapter 13</span> — Repayment Plan</h1><span class="badge badge-ch13">3–5 Years</span></div>
+  <div class="card-grid">
+    <div class="card">
+      <h3>📌 What Is Chapter 13?</h3>
+      <p style="color:var(--muted);font-size:14px;margin-bottom:12px;">Chapter 13 is called <strong style="color:var(--text)">"reorganization bankruptcy."</strong> You propose a 3–5 year repayment plan to pay back some or all of your debts. You keep all your property throughout the process.</p>
+      <div class="alert alert-purple"><strong>Key benefit</strong> You can save your home from foreclosure by catching up on mortgage arrears over the plan term — something Chapter 7 cannot do.</div>
+    </div>
+    <div class="card">
+      <h3>✅ Best For People Who...</h3>
+      <ul style="padding-left:18px;font-size:14px;line-height:2;">
+        <li>Are behind on mortgage &amp; want to save their home</li>
+        <li>Have non-exempt assets they want to keep</li>
+        <li>Have income too high for Chapter 7</li>
+        <li>Need to pay back taxes or support arrears</li>
+        <li>Filed Chapter 7 in the last 8 years</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>📊 Key Facts</h3>
+      <table>
+        <tr><td class="td-feat">Filing Fee</td><td class="td-ch13">$313</td></tr>
+        <tr><td class="td-feat">Duration</td><td class="td-ch13">3–5 years</td></tr>
+        <tr><td class="td-feat">Income Required</td><td class="td-ch13">Yes — must have regular income</td></tr>
+        <tr><td class="td-feat">Credit Report</td><td class="td-ch13">7 years from filing</td></tr>
+        <tr><td class="td-feat">Unsecured Debt Limit</td><td class="td-ch13">&lt; $465,275</td></tr>
+        <tr><td class="td-feat">Secured Debt Limit</td><td class="td-ch13">&lt; $1,395,875</td></tr>
+        <tr><td class="td-feat">Legal Ref.</td><td class="td-ch13">11 U.S.C. §§ 1301–1330</td></tr>
+      </table>
+    </div>
+    <div class="card">
+      <h3>⛔ Not Available If You...</h3>
+      <ul style="padding-left:18px;font-size:14px;line-height:2;">
+        <li>Have no steady income source</li>
+        <li>Exceed the secured/unsecured debt limits</li>
+        <li>Are a corporation or LLC (individuals only)</li>
+        <li>Have unfiled tax returns for the past 4 years</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card">
+    <h3>💡 How the Repayment Plan Works</h3>
+    <div style="font-size:14px;line-height:1.8;color:var(--muted);">
+      <p style="margin-bottom:12px;">Your plan pays debts in a specific order of priority:</p>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;">
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px;">1️⃣</div>
+          <div style="font-weight:700;color:var(--text);margin-bottom:4px;">Priority Debts</div>
+          <div style="font-size:12px;">Paid 100%: child support, recent taxes, admin costs</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px;">2️⃣</div>
+          <div style="font-weight:700;color:var(--text);margin-bottom:4px;">Secured Debts</div>
+          <div style="font-size:12px;">Mortgage arrears, car loans (possibly at reduced rate)</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;text-align:center;">
+          <div style="font-size:20px;margin-bottom:6px;">3️⃣</div>
+          <div style="font-weight:700;color:var(--text);margin-bottom:4px;">Unsecured Debts</div>
+          <div style="font-size:12px;">Credit cards, medical bills — often pennies on the dollar, remainder discharged</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH13 ELIGIBILITY
+══════════════════════════════════════════ -->
+<section id="page-ch13-eligibility" style="display:none;">
+  <div class="topbar"><h1><span style="color:var(--ch13)">Chapter 13</span> — Eligibility</h1></div>
+  <div class="alert alert-yellow"><strong>Important</strong> This is a self-assessment tool, not a legal determination. An attorney can confirm your eligibility with certainty.</div>
+  <div id="ch13-elig-list"></div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH13 CHECKLIST
+══════════════════════════════════════════ -->
+<section id="page-ch13-checklist" style="display:none;">
+  <div class="topbar">
+    <div>
+      <h1><span style="color:var(--ch13)">Chapter 13</span> — Step-by-Step Checklist</h1>
+      <p style="color:var(--muted);font-size:13px;margin-top:4px;">Track every task from preparation through discharge. Progress saves automatically.</p>
+    </div>
+    <button class="btn btn-secondary btn-sm" onclick="resetChecklist('ch13')">Reset</button>
+  </div>
+  <div class="card" style="padding:16px 24px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-weight:700;">Overall Progress</span>
+      <span id="ch13-overall-pct" style="color:var(--ch13);font-weight:700;"></span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill fill-ch13" id="ch13-overall-bar" style="width:0%"></div></div>
+  </div>
+  <div id="ch13-checklist-body"></div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH13 TIMELINE
+══════════════════════════════════════════ -->
+<section id="page-ch13-timeline" style="display:none;">
+  <div class="topbar"><h1><span style="color:var(--ch13)">Chapter 13</span> — Timeline</h1></div>
+  <div class="card">
+    <div class="timeline" id="ch13-timeline-body"></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     CH13 INSIGHTS
+══════════════════════════════════════════ -->
+<section id="page-ch13-insights" style="display:none;">
+  <div class="topbar"><h1><span style="color:var(--ch13)">Chapter 13</span> — Insights &amp; Tips</h1></div>
+  <div id="ch13-insights-body"></div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     COMPARE
+══════════════════════════════════════════ -->
+<section id="page-compare" style="display:none;">
+  <div class="topbar"><h1>⚖️ Chapter 7 vs. Chapter 13</h1></div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Feature</th><th style="color:var(--ch7)">Chapter 7</th><th style="color:var(--ch13)">Chapter 13</th></tr></thead>
+      <tbody>
+        <tr><td class="td-feat">Process Time</td><td class="td-ch7">3–6 months</td><td class="td-ch13">3–5 years</td></tr>
+        <tr><td class="td-feat">Filing Fee</td><td class="td-ch7">$338</td><td class="td-ch13">$313</td></tr>
+        <tr><td class="td-feat">Keep All Property?</td><td class="td-ch7">Maybe (exempt assets only)</td><td class="td-ch13">Yes — everything</td></tr>
+        <tr><td class="td-feat">Income Requirement</td><td class="td-ch7">Low/none preferred</td><td class="td-ch13">Must have regular income</td></tr>
+        <tr><td class="td-feat">Debt Limits</td><td class="td-ch7">None</td><td class="td-ch13">Secured &lt;$1.4M / Unsecured &lt;$465K</td></tr>
+        <tr><td class="td-feat">Save Home from Foreclosure</td><td class="td-ch7">❌ Cannot cure arrears</td><td class="td-ch13">✅ Yes — cure over plan term</td></tr>
+        <tr><td class="td-feat">Student Loans</td><td class="td-ch7">Not discharged</td><td class="td-ch13">Not discharged</td></tr>
+        <tr><td class="td-feat">Tax Debt</td><td class="td-ch7">Old taxes only (3-yr rule)</td><td class="td-ch13">Pay over plan term</td></tr>
+        <tr><td class="td-feat">Credit Report Impact</td><td class="td-ch7">10 years</td><td class="td-ch13">7 years</td></tr>
+        <tr><td class="td-feat">Prior Ch.7 Refiling Bar</td><td class="td-ch7">8 years between filings</td><td class="td-ch13">4 years after Ch.7</td></tr>
+        <tr><td class="td-feat">Co-signer Protection</td><td class="td-ch7">None</td><td class="td-ch13">Co-debtor stay available</td></tr>
+        <tr><td class="td-feat">Disposable Income</td><td class="td-ch7">You keep it</td><td class="td-ch13">Must pay to creditors</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card-grid">
+    <div class="card" style="border-color:var(--ch7);">
+      <h3 style="color:var(--ch7)">Choose Chapter 7 if...</h3>
+      <ul style="padding-left:18px;font-size:14px;line-height:2;">
+        <li>Mostly credit cards, medical bills, personal loans</li>
+        <li>Few non-exempt assets</li>
+        <li>Low income or you pass the Means Test</li>
+        <li>You want this resolved in months, not years</li>
+      </ul>
+    </div>
+    <div class="card" style="border-color:var(--ch13);">
+      <h3 style="color:var(--ch13)">Choose Chapter 13 if...</h3>
+      <ul style="padding-left:18px;font-size:14px;line-height:2;">
+        <li>Behind on mortgage and want to keep the home</li>
+        <li>Assets you'd lose in Chapter 7</li>
+        <li>Income too high to qualify for Chapter 7</li>
+        <li>Significant tax or support debt to repay over time</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     EXPLAINERS
+══════════════════════════════════════════ -->
+<section id="page-explainers" style="display:none;">
+  <div class="topbar"><h1>📖 Key Concepts — Explained Simply</h1></div>
+  <p style="color:var(--muted);font-size:14px;margin-bottom:20px;">Click any card to read a plain-English explanation. No legal jargon.</p>
+  <div class="explainer-grid" id="explainer-grid"></div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     RESOURCES
+══════════════════════════════════════════ -->
+<section id="page-resources" style="display:none;">
+  <div class="topbar"><h1>🔗 Federal Resources</h1></div>
+  <div class="alert alert-blue"><strong>Official sources only.</strong> All links below are U.S. government or nationally recognized resources. Dollar amounts and forms change — always verify at the official site before relying on any figure.</div>
+  <div class="card" id="resources-body"></div>
+</section>
+
+</main>
+
+<!-- ── Explainer Modal ── -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)">
+  <div class="modal" id="modal-box">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <h3 id="modal-title"></h3>
+    <pre id="modal-body"></pre>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════ -->
+<script>
+// ── State ──────────────────────────────────────────────
+const STORAGE_KEY = 'bk_planner_v1';
+function getState() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {ch7:{},ch13:{}}; }
+  catch(e) { return {ch7:{},ch13:{}}; }
+}
+function setState(s) { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); }
+
+// ── Navigation ─────────────────────────────────────────
+function showPage(id) {
+  document.querySelectorAll('main > section').forEach(s => s.style.display = 'none');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const el = document.getElementById('page-' + id);
+  if (el) el.style.display = 'block';
+  const nav = document.getElementById('nav-' + id);
+  if (nav) nav.classList.add('active');
+  window.scrollTo(0,0);
+  updateMiniProgress();
+}
+
+// ── Intake state ───────────────────────────────────────
+const iData = {};
+let iStep = 1;
+const TOTAL_STEPS = 10;
+
+function renderDots(stepId) {
+  const d = document.getElementById('dots-' + stepId);
+  if (!d) return;
+  let html = '';
+  for (let i = 1; i <= TOTAL_STEPS; i++) {
+    let cls = i < iStep ? 'done' : i === iStep ? 'current' : '';
+    html += `<div class="step-dot ${cls}"></div>`;
+  }
+  d.innerHTML = html;
+}
+
+function showStep(n) {
+  document.querySelectorAll('.intake-step').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('intake-q' + n);
+  if (el) { el.classList.add('active'); iStep = n; renderDots(n); }
+}
+
+function intakeNext(from) {
+  if (from === 1) {
+    iData.name = document.getElementById('intake-name').value.trim() || 'Friend';
+    showStep(2);
+  }
+}
+function intakeBack(to) { showStep(to); }
+
+function intakeYN(key, val, stepNum) {
+  iData[key] = val;
+  // Update button styles
+  const step = document.getElementById('intake-q' + stepNum);
+  step.querySelectorAll('.yn-btn').forEach(b => b.classList.remove('sel'));
+  event.target.classList.add('sel');
+  setTimeout(() => {
+    if (key === 'income') {
+      if (val) showStep(3); else { iData.income_level = 0; showStep(4); }
+    } else if (key === 'owns_home') {
+      if (val) showStep(6); else { iData.home_behind = false; iData.home_equity = false; showStep(8); }
+    } else if (key === 'home_behind') {
+      showStep(7);
+    } else if (key === 'home_equity') {
+      showStep(8);
+    } else if (key === 'prior_bk') {
+      if (val) showStep(9); else { iData.prior_when = 99; showStep(10); }
+    }
+  }, 200);
+}
+
+function intakeOpt(key, val, stepNum) {
+  iData[key] = val;
+  const step = document.getElementById('intake-q' + stepNum);
+  step.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  event.target.classList.add('selected');
+  setTimeout(() => {
+    if (stepNum === 3) showStep(4);
+    else if (stepNum === 4) showStep(5);
+    else if (stepNum === 9) showStep(10);
+    else if (stepNum === 10) showIntakeResults();
+  }, 200);
+}
+
+function showIntakeResults() {
+  document.querySelectorAll('.intake-step').forEach(s => s.classList.remove('active'));
+  const res = document.getElementById('intake-results');
+  res.style.display = 'block';
+
+  // — Urgency alert —
+  const urgMap = {
+    1: ['🚨 FORECLOSURE ALERT', 'alert-red',    'Filing bankruptcy TODAY triggers the Automatic Stay (11 U.S.C. § 362), which immediately halts foreclosure proceedings — even a scheduled sale date. Time is critical. Call a bankruptcy attorney today — many offer same-day emergency filings.'],
+    2: ['⚠️ WAGE GARNISHMENT ALERT', 'alert-red', 'Filing triggers the Automatic Stay, which stops wage garnishment the same day your case is filed. Your employer must stop withholding immediately upon receiving notice.'],
+    3: ['🏦 BANK LEVY ALERT', 'alert-red',       'Filing triggers the Automatic Stay — bank levies must stop immediately. Act quickly; funds already transferred may be harder to recover.'],
+    4: ['⚖️ LAWSUIT ALERT', 'alert-yellow',       'Filing triggers the Automatic Stay, which freezes the pending lawsuit. This buys time regardless of which chapter you file.'],
+    5: ['🚗 REPOSSESSION ALERT', 'alert-red',     'Filing triggers the Automatic Stay — all repossession attempts must stop immediately upon filing. If repossession has already occurred in the last few days, you may be able to get the vehicle back.'],
+  };
+  const ua = document.getElementById('result-urgency-alert');
+  if (iData.urgency && urgMap[iData.urgency]) {
+    const [title, cls, msg] = urgMap[iData.urgency];
+    ua.innerHTML = `<div class="alert ${cls}" style="margin-bottom:16px;"><strong>${title}</strong>${msg}</div>`;
+  }
+
+  // — Recommendation logic —
+  let rec = 'either';
+  const flags = [];
+  const nextSteps = [];
+
+  const incomeOkCh7   = !iData.income || iData.income_level <= 3 || iData.income_level === 5;
+  const wantsHome     = iData.owns_home && iData.home_behind;
+  const hasEquity     = iData.owns_home && iData.home_equity;
+  const priorCh7Bar   = iData.prior_bk && iData.prior_when && iData.prior_when <= 3;
+  const priorCh7Near  = iData.prior_bk && iData.prior_when === 4; // >8 yrs ago = ok
+
+  if (iData.urgency && iData.urgency <= 5) {
+    nextSteps.push({icon:'🚨', text:'URGENT: Call a bankruptcy attorney today — ask about same-day emergency filing', cls:'alert-red'});
+  }
+
+  if (priorCh7Bar) {
+    rec = 'ch13';
+    flags.push({title:'Prior Chapter 7 may bar refiling', msg:'If your last Chapter 7 discharge was within 8 years, you cannot receive another Ch.7 discharge. Chapter 13 may still be available (4-year wait after Ch.7 discharge).', cls:'alert-yellow'});
+  } else if (wantsHome) {
+    rec = 'ch13';
+    flags.push({title:"🏠 Chapter 13's #1 superpower: save your home", msg:'Chapter 13 lets you catch up on mortgage arrears over 3–5 years while the Automatic Stay prevents foreclosure. This is something Chapter 7 cannot do.', cls:'alert-purple'});
+  } else if (iData.debt_type === 5) {
+    rec = 'consult';
+    flags.push({title:'Student loans — largely non-dischargeable', msg:'Student loans survive bankruptcy in almost all cases. However, if you have other dischargeable debts alongside them, bankruptcy can still free up cash to pay student loans. An attorney can run a cost-benefit analysis.', cls:'alert-yellow'});
+  } else if (!iData.income) {
+    rec = 'ch7';
+    flags.push({title:'No regular income → Chapter 7 likely more appropriate', msg:'Chapter 13 requires regular income to fund a repayment plan. Without income, Chapter 7 may be your primary option.', cls:'alert-blue'});
+  } else if (!incomeOkCh7 && hasEquity) {
+    rec = 'ch13';
+    flags.push({title:'Higher income + home equity → Chapter 13 likely fits better', msg:'Your income level may disqualify you from Chapter 7 (Means Test), and you have home equity to protect. Chapter 13 lets you keep all assets while paying creditors over time.', cls:'alert-purple'});
+  } else if (incomeOkCh7 && !hasEquity) {
+    rec = 'ch7';
+  }
+
+  const recData = {
+    ch7:     {cls:'ch7',  title:'Chapter 7 — Liquidation Bankruptcy', sub:'Erase most unsecured debt in 3–6 months. Fast, clean fresh start.'},
+    ch13:    {cls:'ch13', title:'Chapter 13 — Repayment Plan',         sub:'Structured 3–5 year plan. Keep your assets. Save your home.'},
+    either:  {cls:'both', title:'Either Chapter May Work For You',      sub:'Your situation could benefit from either path. Review the comparison and consult an attorney.'},
+    consult: {cls:'both', title:'Attorney Consultation Recommended First', sub:'Your situation has nuances that warrant a professional review before choosing a chapter.'},
+  };
+  const rd = recData[rec] || recData.either;
+  const recBox = document.getElementById('result-rec-box');
+  recBox.className = `rec-box ${rd.cls}`;
+  recBox.innerHTML = `
+    <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:6px;">Recommended Path for ${iData.name || 'You'}</div>
+    <div class="rec-title">${rd.title}</div>
+    <div class="rec-sub">${rd.sub}</div>
+  `;
+
+  // Flags
+  const flagsEl = document.getElementById('result-flags');
+  if (flags.length) {
+    flagsEl.innerHTML = flags.map(f => `<div class="alert ${f.cls}" style="margin-bottom:12px;"><strong>${f.title}</strong>${f.msg}</div>`).join('');
+  }
+
+  // Retirement note
+  if (iData.has_retirement) {
+    document.getElementById('result-retire-note').innerHTML = `
+      <div class="alert alert-green" style="margin-bottom:16px;">
+        <strong>✅ Your retirement accounts are protected.</strong>
+        ERISA-qualified accounts (401k, IRA, pension) are fully exempt in bankruptcy regardless of which chapter you file. <strong>Do NOT cash out retirement savings to pay debts before filing</strong> — the money is safe inside the account, but it would no longer be protected if you withdraw it.
+      </div>`;
+  }
+
+  // Next steps
+  const universal = [
+    {icon:'📞', text:'Complete a DOJ-approved credit counseling course within 180 days before filing (justice.gov/ust — search "approved agencies")'},
+    {icon:'📋', text:'Pull your credit reports from all 3 bureaus at annualcreditreport.com — list every creditor name, balance, and address'},
+    {icon:'📄', text:'Gather: last 6 months of pay stubs, last 2 years of tax returns, 3–6 months of bank statements'},
+    {icon:'⚖️', text:'Consult a bankruptcy attorney (free consultations are common — search nacba.org or lawhelp.org)'},
+    {icon:'💰', text:'Stop making discretionary payments on unsecured debts (credit cards) — that money is better saved for attorney fees and filing costs'},
+  ];
+  if (rec === 'ch13') {
+    universal.splice(1, 0, {icon:'🏛️', text:'File any unfiled federal and state tax returns for the last 4 years — this is required by law before Ch.13 can be confirmed'});
+  }
+  const allSteps = [...nextSteps, ...universal];
+  document.getElementById('result-nextsteps').innerHTML = allSteps.map((s, i) =>
+    `<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:18px;min-width:28px;">${s.icon || '→'}</span>
+      <span style="font-size:14px;">${s.text}</span>
+    </div>`
+  ).join('');
+
+  // CTA buttons
+  const ctaEl = document.getElementById('result-cta-buttons');
+  if (rec === 'ch7' || rec === 'either') {
+    ctaEl.innerHTML += `<button class="btn btn-ch7" onclick="showPage('ch7-checklist')">Open Chapter 7 Checklist →</button>`;
+  }
+  if (rec === 'ch13' || rec === 'either') {
+    ctaEl.innerHTML += `<button class="btn btn-ch13" onclick="showPage('ch13-checklist')">Open Chapter 13 Checklist →</button>`;
+  }
+  ctaEl.innerHTML += `<button class="btn btn-secondary" onclick="showPage('compare')">Compare Both Chapters →</button>`;
+}
+
+// ── Eligibility ────────────────────────────────────────
+const CH7_ELIG = [
+  {id:'c7e1', label:'No Chapter 7 discharge in the last 8 years', law:'11 U.S.C. § 727(a)(8)', note:'Federal law requires 8 years between Chapter 7 discharges. If you received a discharge less than 8 years ago, you cannot file again — but Chapter 13 may still be available.'},
+  {id:'c7e2', label:'No Chapter 13 discharge in the last 6 years', law:'11 U.S.C. § 727(a)(9)', note:'If you received a Chapter 13 discharge less than 6 years ago, you\'re ineligible for Chapter 7 (with limited exceptions for certain plans that paid 100% to unsecured creditors).'},
+  {id:'c7e3', label:'Completed approved credit counseling within 180 days', law:'11 U.S.C. § 109(h)', note:'Mandatory before filing. Must be from a DOJ-approved agency (justice.gov/ust). You receive a certificate that must be filed with your petition.'},
+  {id:'c7e4', label:'Pass the Means Test', law:'11 U.S.C. § 707(b)(2)', note:'If your income is below your state\'s median for your household size, you automatically qualify. If above, you must show your disposable income after allowed expenses is below the threshold. Check: justice.gov/ust/means-testing'},
+  {id:'c7e5', label:'No prior case dismissed in last 180 days for abuse/non-compliance', law:'11 U.S.C. § 109(g)', note:'If a prior bankruptcy was dismissed with prejudice, you may face a waiting period before refiling.'},
+  {id:'c7e6', label:'Filing in good faith — not to defraud creditors', law:'11 U.S.C. § 707(a)', note:'Courts can dismiss a case filed in bad faith. Do not transfer assets to family before filing — the trustee can reverse transfers made within 1-2 years.'},
+];
+const CH13_ELIG = [
+  {id:'c13e1', label:'You are an individual (not a corporation or LLC)', law:'11 U.S.C. § 109(e)', note:'Chapter 13 is only for individuals and sole proprietors — not business entities. Businesses must use Chapter 11.'},
+  {id:'c13e2', label:'You have regular income', law:'11 U.S.C. § 101(30)', note:'You must have stable income to fund a repayment plan. The source doesn\'t have to be employment — it can be rental income, Social Security, pension, alimony, or any recurring source.'},
+  {id:'c13e3', label:'Unsecured debts below $465,275 and secured debts below $1,395,875', law:'11 U.S.C. § 109(e)', note:'These limits are set by Congress and adjust every 3 years. Check current limits at uscourts.gov. If you exceed these, Chapter 11 may apply.'},
+  {id:'c13e4', label:'Completed approved credit counseling within 180 days', law:'11 U.S.C. § 109(h)', note:'Same as Chapter 7 — mandatory. Get the DOJ-approved certificate before filing.'},
+  {id:'c13e5', label:'Filed all required federal and state tax returns for last 4 years', law:'11 U.S.C. § 1308', note:'You must have filed all tax returns due for the 4 years before your case. Unfiled returns must be filed before the 341 meeting or your plan can be denied.'},
+  {id:'c13e6', label:'No prior bankruptcy dismissed in last 180 days for failure to comply', law:'11 U.S.C. § 109(g)', note:'Serial filers who had a case dismissed for missing deadlines or court orders may face a 180-day bar on refiling.'},
+];
+
+function renderEligibility(items, containerId, color) {
+  const el = document.getElementById(containerId);
+  const state = getState();
+  el.innerHTML = items.map(item => `
+    <div class="card" style="margin-bottom:12px;">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">
+        <div style="flex:1;">
+          <div style="font-weight:700;margin-bottom:4px;">${item.label}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:8px;">Federal Law: <code style="color:${color}">${item.law}</code></div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.6;">${item.note}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:70px;text-align:center;">
+          <button class="btn btn-sm" style="background:rgba(63,185,80,.2);color:var(--green);border:1px solid rgba(63,185,80,.3);" onclick="setElig('${containerId}','${item.id}','yes')">✓ Yes</button>
+          <button class="btn btn-sm" style="background:rgba(248,81,73,.1);color:var(--red);border:1px solid rgba(248,81,73,.2);" onclick="setElig('${containerId}','${item.id}','no')">✗ No</button>
+        </div>
+      </div>
+      <div id="elig-result-${item.id}" style="margin-top:8px;display:none;"></div>
+    </div>
+  `).join('');
+}
+
+function setElig(containerId, id, val) {
+  const el = document.getElementById('elig-result-' + id);
+  el.style.display = 'block';
+  if (val === 'yes') {
+    el.innerHTML = '<div class="chip chip-green">✓ Requirement met</div>';
+  } else {
+    el.innerHTML = '<div class="chip chip-red">⚠ May not qualify — consult a bankruptcy attorney to review your options</div>';
+  }
+}
+
+// ── Checklists ─────────────────────────────────────────
+const CH7_PHASES = [
+  { phase:'Phase 1 — Gather Financial Documents', color:'var(--ch7)', items:[
+    {id:'c7_tax_returns',  t:'Last 2 years of federal tax returns'},
+    {id:'c7_paystubs',     t:'Last 6 months of pay stubs / income records'},
+    {id:'c7_bank_stmts',   t:'Last 3–6 months of bank statements (all accounts)'},
+    {id:'c7_credit_rpts',  t:'Pull all 3 credit reports (annualcreditreport.com)'},
+    {id:'c7_debt_list',    t:'List ALL debts: creditor name, balance, account number, address'},
+    {id:'c7_asset_list',   t:'List everything you own: home, car, furniture, jewelry, savings'},
+    {id:'c7_prop_deed',    t:'Property deed / mortgage statement (if you own real estate)'},
+    {id:'c7_car_value',    t:'Vehicle value (Kelley Blue Book or NADA)'},
+    {id:'c7_insurance',    t:'Life insurance policy details (if any cash value)'},
+    {id:'c7_retirement',   t:'Retirement account statements (401k, IRA, pension)'},
+  ]},
+  { phase:'Phase 2 — Pre-Filing Requirements', color:'var(--cyan)', items:[
+    {id:'c7_credit_course', t:'Complete credit counseling course (DOJ-approved provider)'},
+    {id:'c7_cert_saved',    t:'Save the counseling certificate — must be filed with the court'},
+    {id:'c7_atty_consult',  t:'Consult a bankruptcy attorney (strongly recommended)'},
+    {id:'c7_means_test',    t:'Calculate / verify Means Test qualification'},
+    {id:'c7_exemptions',    t:'Research which exemptions apply in your state (federal vs. state)'},
+    {id:'c7_stop_payments', t:'Decide which creditors to stop paying (non-essential unsecured debt)'},
+    {id:'c7_no_transfers',  t:'Do NOT transfer property to family/friends — trustee can reverse this'},
+    {id:'c7_no_luxury',     t:'Avoid luxury purchases or cash advances on credit within 90 days of filing'},
+  ]},
+  { phase:'Phase 3 — Prepare & File the Petition', color:'var(--yellow)', items:[
+    {id:'c7_petition',      t:'Complete Official Bankruptcy Forms (uscourts.gov)'},
+    {id:'c7_schedule_ab',   t:'Schedule A/B: List all your property and assets'},
+    {id:'c7_schedule_c',    t:'Schedule C: Claim your exemptions'},
+    {id:'c7_schedule_d',    t:'Schedule D: Secured creditors (mortgage, car loan)'},
+    {id:'c7_schedule_ef',   t:'Schedule E/F: Priority and unsecured creditors (every creditor!)'},
+    {id:'c7_schedule_i',    t:'Schedule I: Your current income'},
+    {id:'c7_schedule_j',    t:'Schedule J: Your current monthly expenses'},
+    {id:'c7_means_form',    t:'Official Form 122A-1: Chapter 7 Means Test Calculation'},
+    {id:'c7_filing_fee',    t:'Pay filing fee: $338 (or apply for fee waiver — Form 103B — if income < 150% poverty)'},
+    {id:'c7_file_court',    t:'File petition at your local U.S. Bankruptcy Court'},
+  ]},
+  { phase:'Phase 4 — After Filing', color:'var(--green)', items:[
+    {id:'c7_case_number',   t:'Receive your case number — Automatic Stay is now active!'},
+    {id:'c7_trustee_docs',  t:'Provide trustee any additionally requested documents'},
+    {id:'c7_341_attend',    t:'Attend 341 Meeting of Creditors (bring valid photo ID + Social Security proof)'},
+    {id:'c7_reaffirmation', t:'Decide on reaffirmation agreements for secured debts (car, home)'},
+    {id:'c7_debtor_ed',     t:'Complete debtor education / financial management course'},
+    {id:'c7_debtor_cert',   t:'File debtor education certificate with the court (Form 423)'},
+    {id:'c7_discharge',     t:'Receive discharge order (~60 days after 341 meeting)'},
+    {id:'c7_close',         t:'Case closes — receive and keep your discharge order FOREVER'},
+  ]},
+  { phase:'Phase 5 — Fresh Start', color:'var(--orange)', items:[
+    {id:'c7_credit_check',   t:'Check credit reports — verify discharged debts show $0 balance'},
+    {id:'c7_budget',         t:'Create a monthly budget to stay debt-free'},
+    {id:'c7_secured_card',   t:'Consider a secured credit card to rebuild credit'},
+    {id:'c7_emergency_fund', t:'Start building a $1,000 emergency fund'},
+    {id:'c7_credit_monitor', t:'Set up free credit monitoring to track your recovery'},
+  ]},
+];
+const CH13_PHASES = [
+  { phase:'Phase 1 — Gather Financial Documents', color:'var(--ch13)', items:[
+    {id:'c13_tax_returns',   t:'Last 4 years of federal AND state tax returns (ALL must be filed!)'},
+    {id:'c13_paystubs',      t:'Last 6 months of pay stubs / proof of all income'},
+    {id:'c13_bank_stmts',    t:'Last 3–6 months of bank statements (all accounts)'},
+    {id:'c13_mortgage',      t:'Mortgage statement(s): balance, monthly payment, total arrears'},
+    {id:'c13_car_loans',     t:'Car loan statements: balance, monthly payment, purchase date'},
+    {id:'c13_credit_rpts',   t:'All 3 credit reports — list every creditor with address and balance'},
+    {id:'c13_asset_values',  t:'Current value of all assets (home appraisal, car value, etc.)'},
+    {id:'c13_monthly_exp',   t:'Document all monthly expenses in detail (rent, utilities, food, etc.)'},
+    {id:'c13_retirement',    t:'Retirement account statements'},
+    {id:'c13_biz_docs',      t:'Business income/expense records if self-employed'},
+  ]},
+  { phase:'Phase 2 — Pre-Filing Requirements', color:'var(--cyan)', items:[
+    {id:'c13_file_taxes',    t:'FILE all unfiled tax returns for last 4 years (required by federal law — 11 U.S.C. § 1308)'},
+    {id:'c13_credit_course', t:'Complete credit counseling course (DOJ-approved provider)'},
+    {id:'c13_cert_saved',    t:'Save the counseling certificate — file it with the petition'},
+    {id:'c13_atty_consult',  t:'Consult a bankruptcy attorney (highly recommended for Chapter 13)'},
+    {id:'c13_plan_draft',    t:'Draft repayment plan: calculate disposable income for plan payment'},
+    {id:'c13_mortgage_arrs', t:'Calculate total mortgage arrears to include in plan'},
+    {id:'c13_priority_debts',t:'Identify priority debts (taxes, support) — must be paid 100% in plan'},
+    {id:'c13_exemptions',    t:'Verify exemptions — unsecured creditors must receive at least what Ch.7 would pay'},
+  ]},
+  { phase:'Phase 3 — Prepare & File the Petition', color:'var(--yellow)', items:[
+    {id:'c13_petition',      t:'Complete all Official Bankruptcy Forms (uscourts.gov)'},
+    {id:'c13_schedules',     t:'Complete all Schedules A/B through J (assets, debts, income, expenses)'},
+    {id:'c13_means_form',    t:'Official Form 122C: Chapter 13 Calculation of Disposable Income'},
+    {id:'c13_plan_form',     t:'Official Form 113: Chapter 13 Plan (your detailed repayment plan)'},
+    {id:'c13_filing_fee',    t:'Pay filing fee: $313 (fee waivers are NOT available for Chapter 13)'},
+    {id:'c13_file_court',    t:'File petition at local U.S. Bankruptcy Court'},
+    {id:'c13_auto_stay',     t:'Automatic Stay begins — notify mortgage servicer in writing immediately!'},
+  ]},
+  { phase:'Phase 4 — Plan Confirmation', color:'var(--ch13)', items:[
+    {id:'c13_first_payment', t:'Begin plan payments within 30 days of filing (required BEFORE confirmation)'},
+    {id:'c13_341_attend',    t:'Attend 341 Meeting of Creditors (bring photo ID + Social Security proof)'},
+    {id:'c13_creditor_obj',  t:'Respond to any creditor objections to your proposed plan'},
+    {id:'c13_confirmation',  t:'Attend confirmation hearing (court approves or modifies your plan)'},
+    {id:'c13_plan_approved', t:'Receive plan confirmation order from court'},
+  ]},
+  { phase:'Phase 5 — During the Plan (3–5 Years)', color:'var(--green)', items:[
+    {id:'c13_payments',       t:'Make EVERY plan payment on time — missing payments can result in dismissal'},
+    {id:'c13_tax_returns_yr', t:'File all tax returns every year and provide copies to trustee'},
+    {id:'c13_tax_refunds',    t:'Report all tax refunds to trustee (large refunds may need to be turned over)'},
+    {id:'c13_notify_changes', t:'Notify attorney/court of income changes, new debts, or major unexpected expenses'},
+    {id:'c13_debtor_ed',      t:'Complete debtor education course before the end of the plan'},
+    {id:'c13_modify_plan',    t:'Modify plan if circumstances change (job loss, medical crisis, income increase)'},
+  ]},
+  { phase:'Phase 6 — Discharge & Fresh Start', color:'var(--orange)', items:[
+    {id:'c13_all_paid',      t:'All plan payments completed successfully 🎉'},
+    {id:'c13_cert_filed',    t:'File debtor education certificate with court'},
+    {id:'c13_cert_payments', t:'Certify no domestic support obligation arrears (if applicable)'},
+    {id:'c13_discharge',     t:'Receive discharge order — remaining eligible debts are erased!'},
+    {id:'c13_credit_check',  t:'Check credit reports — verify all discharged debts reflect correctly'},
+  ]},
+];
+
+function renderChecklist(phases, stateKey, bodyId, barId, pctId, fillClass) {
+  const state = getState();
+  const tasks = state[stateKey] || {};
+  const body = document.getElementById(bodyId);
+  let totalDone = 0, totalAll = 0;
+
+  body.innerHTML = phases.map(phase => {
+    const done  = phase.items.filter(i => tasks[i.id]).length;
+    const total = phase.items.length;
+    totalDone += done;
+    totalAll  += total;
+    const pct = Math.round(done / total * 100);
+    const bar = `<div class="progress-bar"><div class="progress-fill ${fillClass}" style="width:${pct}%"></div></div>`;
+    const items = phase.items.map(item => `
+      <div class="check-item ${tasks[item.id] ? 'done' : ''}" onclick="toggleTask('${stateKey}','${item.id}','${bodyId}','${barId}','${pctId}','${fillClass}')">
+        <input type="checkbox" ${tasks[item.id] ? 'checked' : ''} readonly onclick="event.stopPropagation();toggleTask('${stateKey}','${item.id}','${bodyId}','${barId}','${pctId}','${fillClass}')"/>
+        <span class="check-label">${item.t}</span>
+      </div>`).join('');
+    return `
+      <div class="phase-header" style="color:${phase.color};">
+        ${phase.phase}
+        <span style="font-size:12px;">${done}/${total} &nbsp; ${pct}%</span>
+      </div>
+      ${bar}
+      <div style="margin-bottom:20px;">${items}</div>`;
+  }).join('');
+
+  const overallPct = totalAll ? Math.round(totalDone / totalAll * 100) : 0;
+  document.getElementById(barId).style.width = overallPct + '%';
+  document.getElementById(pctId).textContent = `${totalDone} / ${totalAll} (${overallPct}%)`;
+  updateMiniProgress();
+}
+
+function toggleTask(stateKey, taskId, bodyId, barId, pctId, fillClass) {
+  const state = getState();
+  if (!state[stateKey]) state[stateKey] = {};
+  state[stateKey][taskId] = !state[stateKey][taskId];
+  setState(state);
+  renderChecklist(stateKey === 'ch7' ? CH7_PHASES : CH13_PHASES, stateKey, bodyId, barId, pctId, fillClass);
+}
+
+function resetChecklist(ch) {
+  if (!confirm(`Reset all ${ch.toUpperCase()} progress? This cannot be undone.`)) return;
+  const state = getState();
+  state[ch] = {};
+  setState(state);
+  if (ch === 'ch7')  renderChecklist(CH7_PHASES,  'ch7',  'ch7-checklist-body',  'ch7-overall-bar',  'ch7-overall-pct',  'fill-ch7');
+  if (ch === 'ch13') renderChecklist(CH13_PHASES, 'ch13', 'ch13-checklist-body', 'ch13-overall-bar', 'ch13-overall-pct', 'fill-ch13');
+  updateMiniProgress();
+}
+
+function updateMiniProgress() {
+  const state = getState();
+  const ch7t  = CH7_PHASES.reduce((s,p)=>s+p.items.length,0);
+  const ch13t = CH13_PHASES.reduce((s,p)=>s+p.items.length,0);
+  const ch7d  = CH7_PHASES.reduce((s,p)=>s+p.items.filter(i=>state.ch7&&state.ch7[i.id]).length,0);
+  const ch13d = CH13_PHASES.reduce((s,p)=>s+p.items.filter(i=>state.ch13&&state.ch13[i.id]).length,0);
+  const m7  = document.getElementById('mini-ch7');
+  const m13 = document.getElementById('mini-ch13');
+  if (m7)  m7.textContent  = `${ch7d}/${ch7t}`;
+  if (m13) m13.textContent = `${ch13d}/${ch13t}`;
+}
+
+// ── Timelines ──────────────────────────────────────────
+const CH7_TL = [
+  {time:'Day 1',         event:'File petition → Automatic Stay begins immediately (stops all collections)',     dot:'var(--ch7)'},
+  {time:'Day 1–7',       event:'Court mails notice to all listed creditors',                                    dot:'var(--muted)'},
+  {time:'Day 21–40',     event:'341 Meeting of Creditors — you must attend (bring ID + SSN proof)',             dot:'var(--yellow)'},
+  {time:'Day 60–90',     event:'Trustee investigation period expires (most cases: no assets to administer)',    dot:'var(--muted)'},
+  {time:'Day 60–90',     event:'Complete debtor education course & file certificate with court',               dot:'var(--cyan)'},
+  {time:'~Day 90–120',   event:'Court issues Discharge Order — most eligible debts are legally erased',        dot:'var(--green)'},
+  {time:'~Day 120–180',  event:'Case closes (longer if trustee has assets to sell and distribute)',            dot:'var(--green)'},
+];
+const CH13_TL = [
+  {time:'Day 1',           event:'File petition → Automatic Stay begins (stops foreclosure, collections)',       dot:'var(--ch13)'},
+  {time:'Within 30 days',  event:'FIRST plan payment due to trustee — required BEFORE confirmation hearing',     dot:'var(--red)'},
+  {time:'Day 21–50',       event:'341 Meeting of Creditors (bring photo ID + SSN card)',                         dot:'var(--yellow)'},
+  {time:'Day 45',          event:'Deadline for secured creditors to file proofs of claim',                       dot:'var(--muted)'},
+  {time:'Day 90',          event:'Deadline for unsecured creditors to file proofs of claim',                     dot:'var(--muted)'},
+  {time:'Day 45–90+',      event:'Plan Confirmation Hearing — judge approves, modifies, or denies your plan',   dot:'var(--cyan)'},
+  {time:'Month 1–60',      event:'Monthly plan payments to trustee (trustee distributes to creditors)',          dot:'var(--ch13)'},
+  {time:'Year 3 or 5',     event:'Final plan payment made 🎉',                                                   dot:'var(--green)'},
+  {time:'After final pmt', event:'Complete debtor education course + file certificate with court',               dot:'var(--cyan)'},
+  {time:'~30 days later',  event:'Discharge Order issued — remaining eligible debts erased. Case closes.',      dot:'var(--green)'},
+];
+
+function renderTimeline(items, containerId, color) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = items.map(item => `
+    <div class="tl-item">
+      <div class="tl-dot" style="background:${item.dot};border-color:var(--bg);"></div>
+      <div class="tl-time">${item.time}</div>
+      <div class="tl-event">${item.event}</div>
+    </div>`).join('');
+}
+
+// ── Insights ───────────────────────────────────────────
+const CH7_INSIGHTS = [
+  {icon:'💸', title:'Filing fee waivers available', body:'If your income is below 150% of the federal poverty level, you can apply to have the $338 filing fee completely waived using Official Form 103B. You don\'t need to pay anything to get a fresh start.'},
+  {icon:'⏰', title:'The 90-day / 1-year lookback rule', body:'Payments to "insiders" (family, friends) within 1 year before filing can be "clawed back" by the trustee. For other creditors, the lookback is 90 days. Don\'t pay off loans to family members before filing — it could hurt your case.'},
+  {icon:'🏦', title:'Your retirement account is completely safe', body:'ERISA-qualified accounts (401k, 403b, most IRAs up to ~$1.5M) are generally fully protected in bankruptcy. Never cash out your 401k to pay debts before filing — that money is 100% protected inside the account, but unprotected once withdrawn.'},
+  {icon:'🔍', title:'Honesty is the most important thing', body:'Hiding assets, lying on the petition, or omitting creditors can result in your discharge being DENIED and criminal prosecution for bankruptcy fraud. Disclose everything — even property you expect to keep. The trustee has tools to find hidden assets.'},
+  {icon:'📈', title:'Credit rebuilds faster than you expect', body:'Most bankruptcy filers receive credit card offers within 6–12 months of discharge. A secured credit card + consistent on-time payments can put you above 650 within 2 years. Your score can recover more than most people expect.'},
+  {icon:'💰', title:'Time your tax refund carefully', body:'If you file early in the year and have a large tax refund coming, that refund is technically an asset the trustee may be able to take. Strategic timing of your filing (or adjusting your withholding beforehand) can protect it.'},
+  {icon:'📝', title:'You can file without an attorney ("pro se")', body:'It\'s legally permitted to file without an attorney. However, errors can result in case dismissal, loss of assets, or denied discharge. Attorney fees ($1,000–$2,000 for Chapter 7) often pay for themselves in protected assets and avoided mistakes.'},
+];
+const CH13_INSIGHTS = [
+  {icon:'🏠', title:'Save your home from foreclosure', body:'Chapter 13\'s #1 superpower. Once you file, the Automatic Stay stops foreclosure immediately. Your plan spreads mortgage arrears over 3–5 years. As long as you can afford current mortgage payments plus the monthly catch-up amount — you keep the house.'},
+  {icon:'🚗', title:'The 910-day car "cramdown" rule', body:'If you\'ve owned your car for 910+ days (~2.5 years) before filing, you can reduce the loan balance to the car\'s current market value. Example: you owe $18,000 on a car worth $10,000 — you only have to pay $10,000 in the plan. The interest rate is also reduced.'},
+  {icon:'🏚️', title:'Strip a second mortgage off your home', body:'If your home is worth LESS than you owe on your first mortgage, a second mortgage or HELOC can be "stripped off" — treated as unsecured debt and discharged at the end of your plan. This is one of the most powerful tools for underwater homeowners.'},
+  {icon:'⚠️', title:'Never miss a plan payment', body:'Missing trustee payments is the #1 reason Chapter 13 cases get dismissed. With dismissal, the Automatic Stay ends and creditors can immediately resume collections, garnishments, and foreclosure. Set up automatic bank payments to the trustee if at all possible.'},
+  {icon:'🧾', title:'Plan for your tax refunds', body:'In Chapter 13, large tax refunds may need to be turned over to the trustee to pay creditors. Consider adjusting your W-4 withholding to reduce your refund and keep more money in each paycheck instead — it all stays within your plan budget.'},
+  {icon:'🆘', title:'The hardship discharge exists', body:'If you cannot complete your plan due to circumstances beyond your control (serious illness, disability, job loss from no fault of your own), you may qualify for a "hardship discharge" under 11 U.S.C. § 1328(b). It\'s harder to obtain but it\'s a real safety net.'},
+  {icon:'⚖️', title:'Attorney fees are built into the plan', body:'Chapter 13 attorney fees ($3,000–$5,000) are typically paid through the repayment plan over time — not all upfront. You usually pay a small retainer, then the rest comes through monthly plan payments. This makes filing accessible even when you\'re already struggling.'},
+];
+
+function renderInsights(items, containerId) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = items.map(item => `
+    <div class="insight-item">
+      <div class="insight-title">${item.icon} ${item.title}</div>
+      <div class="insight-body">${item.body}</div>
+    </div>`).join('');
+}
+
+// ── Explainers ─────────────────────────────────────────
+const EXPLAINERS = [
+  {icon:'🛡️', title:'Automatic Stay', sub:'Collections stop the moment you file', content:`The moment you file for bankruptcy, a powerful legal protection called the Automatic Stay kicks in automatically (11 U.S.C. § 362).
+
+WHAT IT STOPS IMMEDIATELY:
+  • Most creditor collection actions
+  • Lawsuits and court proceedings
+  • Wage garnishments and bank levies
+  • Foreclosure proceedings (temporarily)
+  • Vehicle repossessions
+  • Harassing calls and collection letters
+
+WHAT IT DOES NOT STOP:
+  • Criminal proceedings
+  • Child support and alimony collection
+  • Certain IRS tax proceedings
+  • Actions against co-debtors (in Chapter 7)
+
+DURATION:
+  Chapter 7 → lasts until discharge (~3-6 months)
+  Chapter 13 → lasts the entire 3-5 year repayment plan
+
+INSIGHT: This is one of bankruptcy's most powerful tools. If you're facing imminent foreclosure or wage garnishment, filing — even on an emergency "bare bones" petition — can stop it the same day.`},
+
+  {icon:'📊', title:'The Means Test', sub:'Do you qualify for Chapter 7?', content:`Congress created the Means Test in 2005 to prevent higher-income filers from using Chapter 7 when they could actually repay their debts (11 U.S.C. § 707(b)(2)).
+
+STEP 1 — Compare to State Median Income:
+  • The U.S. Trustee publishes median income by state and family size
+  • If your 6-month average monthly income is AT OR BELOW your state's median → you automatically pass
+  • If ABOVE the median → you must complete Step 2
+
+STEP 2 — Calculate Disposable Income:
+  • Subtract IRS-allowed expense standards (housing, food, transportation)
+  • Subtract actual expenses for some categories
+  • If remaining "disposable income" is below threshold → you pass
+  • If above threshold → you may be required to file Chapter 13
+
+WHERE TO FIND CURRENT NUMBERS:
+  justice.gov/ust/means-testing  (updated by DOJ)
+
+INSIGHT: The 6-month income lookback is strategic. If you recently lost a job or took a major pay cut, your calculated income may be lower than your current income — timing your filing matters.`},
+
+  {icon:'✂️', title:'Dischargeable Debts', sub:'What gets erased vs. what survives', content:`CAN be discharged (erased) in bankruptcy:
+  ✓ Credit card balances
+  ✓ Medical bills
+  ✓ Personal loans and payday loans
+  ✓ Utility arrears (past-due amounts)
+  ✓ Lease obligations (in most cases)
+  ✓ Business debts (for sole proprietors)
+  ✓ Older income tax debt (if it meets the "3-year rule")
+  ✓ Deficiency balances after repossession
+
+CANNOT be discharged (these survive bankruptcy — § 523):
+  ✗ Student loans (very rare hardship exceptions)
+  ✗ Child support and alimony
+  ✗ Recent federal/state income taxes (< 3 years old)
+  ✗ Debts from fraud or intentional wrongdoing
+  ✗ Criminal fines and court restitution
+  ✗ DUI-related injury or death judgments
+  ✗ Debts NOT listed in your bankruptcy petition
+
+INSIGHT: Chapter 13 can help with non-dischargeable debts by letting you catch up on arrears (e.g. back child support) or pay priority tax debt over 3-5 years — often interest-free.`},
+
+  {icon:'🏠', title:'Exemptions', sub:'What property you get to keep', content:`Exemptions protect your property from being taken by the trustee. You keep exempt property even after filing (11 U.S.C. § 522).
+
+FEDERAL EXEMPTIONS (2025 amounts — adjust every 3 years):
+  🏠 Homestead:         up to $27,900 in home equity
+  🚗 Motor Vehicle:     up to $4,450
+  🛋️  Household Goods:  up to $700/item, $14,875 total
+  💍 Jewelry:           up to $1,875
+  🔧 Tools of Trade:    up to $2,800
+  🃏 Wildcard:          $1,475 + up to $13,950 of unused homestead
+  💰 Retirement Accts:  Unlimited (401k, IRA, pension — ERISA-qualified)
+  🏥 Health Aids:       Unlimited
+  💵 Social Security:   Unlimited (while in your account)
+  ⚔️  VA Benefits:       Unlimited
+
+IMPORTANT: Many states let you choose EITHER federal OR state exemptions — whichever protects more of your property. Some states require you to use only state exemptions.
+
+INSIGHT: If you have significant home equity, compare your state's homestead exemption vs. the federal one carefully before filing. A bankruptcy attorney can run this analysis for you in minutes.`},
+
+  {icon:'🗣️', title:'The 341 Meeting', sub:'What to expect at your creditor meeting', content:`Every bankruptcy filer must attend a "341 Meeting" — named after 11 U.S.C. § 341.
+
+WHAT IT IS:
+A short, informal hearing where a bankruptcy trustee asks you questions about your filed documents, under oath.
+
+WHAT TO EXPECT:
+  • Usually held 21–40 days after you file
+  • Lasts 5–10 minutes for most routine cases
+  • Held at a federal courthouse or by phone/video
+  • Creditors CAN attend but almost never do
+  • You MUST bring: valid government photo ID + proof of Social Security number
+
+COMMON TRUSTEE QUESTIONS:
+  "Did you sign this petition? Is all information accurate?"
+  "Have you filed bankruptcy before?"
+  "Do you own any real estate?"
+  "Are you expecting any inheritance, lawsuit settlements, or tax refunds?"
+  "Have you transferred any property in the last 2 years?"
+
+INSIGHT: The 341 meeting sounds intimidating but is usually brief and routine. If your paperwork is honest and complete, it should be straightforward. Having an attorney seated next to you makes it even smoother.`},
+
+  {icon:'📚', title:'Credit Counseling', sub:'Mandatory — required before filing', content:`FEDERAL LAW REQUIRES this before you can file for bankruptcy (11 U.S.C. § 109(h)).
+
+REQUIREMENT #1 — Credit Counseling (before filing):
+  • Complete an approved credit counseling course
+  • Must be done within 180 days BEFORE filing
+  • Typically online or by phone
+  • Takes about 60–90 minutes
+  • Costs $25–$50 (fee waivers available if income is very low)
+  • You receive a certificate — required to file your petition
+
+REQUIREMENT #2 — Debtor Education (after filing):
+  • After filing (but before discharge), complete a financial management course
+  • Also online, approximately 2 hours
+  • Costs $25–$50
+  • Without this certificate, your discharge can be DENIED
+
+WHERE TO FIND APPROVED PROVIDERS:
+  justice.gov/ust/credit-counseling-debtor-education-information
+
+INSIGHT: Don't wait until the last minute. Complete credit counseling as soon as you decide bankruptcy may be right for you. The 180-day window gives you time, but the certificate must be valid when you file.`},
+
+  {icon:'⚖️', title:'The Bankruptcy Trustee', sub:'Who they are and what they do', content:`A trustee is a court-appointed person who administers your case. Their role differs between chapters.
+
+CHAPTER 7 TRUSTEE:
+  • Reviews your paperwork for accuracy and completeness
+  • Looks for non-exempt assets that can be sold to pay creditors
+  • Conducts your 341 meeting
+  • In most cases (called "no-asset cases"), finds nothing to sell and the case closes after your discharge
+  • Gets paid a percentage of any assets they administer
+
+CHAPTER 13 TRUSTEE:
+  • Reviews and approves your repayment plan
+  • Receives your monthly plan payments
+  • Distributes money to creditors each month
+  • Monitors compliance for the full 3–5 years
+  • Can file a motion to dismiss if you miss payments
+
+IMPORTANT: The trustee works for the integrity of the bankruptcy system and for creditors — NOT for you. Be 100% honest in all filings.
+
+Hiding assets = bankruptcy fraud (federal crime with serious penalties including prison).`},
+
+  {icon:'📝', title:'Reaffirmation Agreements', sub:'Keeping secured debt after bankruptcy', content:`When you file Chapter 7, your personal liability for ALL debts — including secured ones like car loans — is technically discharged. However, the lender still has a lien (legal claim) on the property.
+
+WHAT THIS MEANS:
+  • The lender can still repossess your car or foreclose on your home if you stop paying
+  • But if you keep paying, many lenders will let you keep the property without signing anything new
+
+A Reaffirmation Agreement is a contract where you voluntarily agree to remain personally liable for a debt even after bankruptcy.
+
+WHY YOU MIGHT REAFFIRM:
+  • To keep your car and maintain the loan in good standing
+  • Your lender requires it as a condition of keeping the vehicle
+
+WHY YOU MIGHT NOT WANT TO REAFFIRM:
+  • If you later can't pay, the lender can sue you personally for any deficiency
+  • Without reaffirmation: if you return the car, you owe nothing further
+  • Reaffirmed debt may not be reported positively to credit bureaus unless the lender agrees
+
+"RIDE THROUGH" OPTION: Many people keep paying their car loan without signing a reaffirmation. Many lenders permit this. Consult your attorney before signing any reaffirmation agreement.`},
+];
+
+function renderExplainers() {
+  const grid = document.getElementById('explainer-grid');
+  grid.innerHTML = EXPLAINERS.map((e,i) => `
+    <div class="explainer-card" onclick="openModal(${i})">
+      <div class="explainer-icon">${e.icon}</div>
+      <h4>${e.title}</h4>
+      <p>${e.sub}</p>
+    </div>`).join('');
+}
+
+function openModal(i) {
+  const e = EXPLAINERS[i];
+  document.getElementById('modal-title').textContent = e.icon + ' ' + e.title;
+  document.getElementById('modal-body').textContent  = e.content;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(evt) {
+  if (!evt || evt.target === document.getElementById('modal-overlay')) {
+    document.getElementById('modal-overlay').classList.remove('open');
+  }
+}
+
+// ── Resources ──────────────────────────────────────────
+const RESOURCES = [
+  {name:'U.S. Courts — Official Bankruptcy Forms', url:'uscourts.gov/forms/bankruptcy-forms', desc:'All official petition forms, schedules, and plan forms — free to download. Start here.'},
+  {name:'DOJ U.S. Trustee — Means Test Data', url:'justice.gov/ust/means-testing', desc:'Current median income figures and IRS expense standards by state. Updated regularly.'},
+  {name:'DOJ — Approved Credit Counseling Agencies', url:'justice.gov/ust/credit-counseling-debtor-education-information', desc:'Find a court-approved credit counseling or debtor education provider in your state.'},
+  {name:'AnnualCreditReport.com', url:'annualcreditreport.com', desc:'Free credit reports from all 3 bureaus (Equifax, Experian, TransUnion). Required for filing.'},
+  {name:'PACER — Federal Court Records', url:'pacer.gov', desc:'Access your filed court documents, case docket, and court notices online.'},
+  {name:'NACBA — Find a Bankruptcy Attorney', url:'nacba.org', desc:'National Association of Consumer Bankruptcy Attorneys — find a certified attorney near you.'},
+  {name:'LawHelp.org — Free Legal Aid', url:'lawhelp.org', desc:'Find free or low-cost legal help by state if you cannot afford a bankruptcy attorney.'},
+  {name:'Federal Poverty Guidelines (HHS)', url:'aspe.hhs.gov/poverty-guidelines', desc:'Used to determine filing fee waivers (income must be below 150% of poverty line).'},
+  {name:'IRS Collection Financial Standards', url:'irs.gov/businesses/small-businesses-self-employed/collection-financial-standards', desc:'The expense standards used in the Chapter 7 Means Test calculation. Updated annually.'},
+];
+function renderResources() {
+  document.getElementById('resources-body').innerHTML = RESOURCES.map(r => `
+    <div class="resource-item">
+      <div class="resource-name">${r.name}</div>
+      <div class="resource-url">→ ${r.url}</div>
+      <div class="resource-desc">${r.desc}</div>
+    </div>`).join('');
+}
+
+// ── Init ────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  renderEligibility(CH7_ELIG,  'ch7-elig-list',  'var(--ch7)');
+  renderEligibility(CH13_ELIG, 'ch13-elig-list', 'var(--ch13)');
+  renderChecklist(CH7_PHASES,  'ch7',  'ch7-checklist-body',  'ch7-overall-bar',  'ch7-overall-pct',  'fill-ch7');
+  renderChecklist(CH13_PHASES, 'ch13', 'ch13-checklist-body', 'ch13-overall-bar', 'ch13-overall-pct', 'fill-ch13');
+  renderTimeline(CH7_TL,  'ch7-timeline-body',  'var(--ch7)');
+  renderTimeline(CH13_TL, 'ch13-timeline-body', 'var(--ch13)');
+  renderInsights(CH7_INSIGHTS,  'ch7-insights-body');
+  renderInsights(CH13_INSIGHTS, 'ch13-insights-body');
+  renderExplainers();
+  renderResources();
+  renderDots(1);
+  updateMiniProgress();
+  showPage('intake');
+});
+</script>
+</body>
+</html>
